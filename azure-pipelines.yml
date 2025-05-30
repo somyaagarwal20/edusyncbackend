@@ -1,0 +1,52 @@
+# azure-pipelines.yml
+# CI/CD pipeline for ASP.NET Core backend to Azure App Service
+
+trigger:
+- main
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  azureAppName: 'backendedusyc' # Your Azure Web App name
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET 8 SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+
+- script: dotnet restore
+  displayName: 'Restore NuGet packages'
+
+- script: dotnet build --configuration $(buildConfiguration) --no-restore
+  displayName: 'Build solution'
+
+- script: dotnet publish -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory) --no-build
+  displayName: 'Publish project'
+
+# Optional: Create web.config if needed for IIS/Azure
+- powershell: |
+    $content = '<?xml version="1.0" encoding="utf-8"?><configuration><location path="." inheritInChildApplications="false"><system.webServer><handlers><add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" /></handlers><aspNetCore processPath="dotnet" arguments=".\EduSyncwebapi.dll" stdoutLogEnabled="true" stdoutLogFile="\\?\%home%\\LogFiles\\stdout" hostingModel="inprocess" /></system.webServer></location></configuration>'
+    Set-Content -Path "$(Build.ArtifactStagingDirectory)/web.config" -Value $content
+  displayName: 'Create web.config'
+
+# Publish build artifacts
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+
+# Deploy to Azure Web App
+- task: AzureWebApp@1
+  displayName: 'Deploy to Azure App Service'
+  inputs:
+    azureSubscription: 'Azureconnections' # Service connection name in Azure DevOps
+    appType: 'webApp'
+    appName: '$(azureAppName)'
+    package: '$(Build.ArtifactStagingDirectory)'
+    deploymentMethod: 'auto'
