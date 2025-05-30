@@ -45,7 +45,7 @@ steps:
 - task: AzureWebApp@1
   displayName: 'Deploy to Azure App Service'
   inputs:
-    azureSubscription: 'Azureconnections' # Service connection name in Azure DevOps
+    azureSubscription: 'Azure for Students' # Service connection name in Azure DevOps
     appType: 'webApp'
     appName: '$(azureAppName)'
     package: '$(Build.ArtifactStagingDirectory)'
