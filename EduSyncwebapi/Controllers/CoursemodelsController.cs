@@ -30,18 +30,26 @@ namespace EduSyncwebapi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CourseDto>>> GetCoursemodels()
         {
-            var courses = await _context.Coursemodels.ToListAsync();
-
-            var courseDtos = courses.Select(c => new CourseDto
+            try
             {
-                Cousreld = c.Cousreld,
-                Title = c.Title,
-                Description = c.Description,
-                InstructorId = c.InstructorId,
-                MediaUrl = c.MediaUrl
-            }).ToList();
+                var courses = await _context.Coursemodels.ToListAsync();
 
-            return Ok(courseDtos);
+                var courseDtos = courses.Select(c => new CourseDto
+                {
+                    Cousreld = c.Cousreld,
+                    Title = c.Title,
+                    Description = c.Description,
+                    InstructorId = c.InstructorId,
+                    MediaUrl = c.MediaUrl
+                }).ToList();
+
+                return Ok(courseDtos);
+            }
+            catch (Exception ex)
+            {
+                // Return the error message for debugging
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         // GET: api/Coursemodels/5
