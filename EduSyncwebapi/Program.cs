@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:3000",
+           // "http://localhost:3000",
             "https://edusync-frontend.azurestaticapps.net"  // Add your deployed frontend URL
         )
         .AllowAnyHeader()
