@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "https://witty-smoke-07babad00.6.azurestaticapps.net",
+            "https://witty-smoke-07babad00.6.azurestaticapps.net"
             
         )
         .AllowAnyHeader()

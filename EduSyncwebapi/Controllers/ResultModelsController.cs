@@ -8,6 +8,7 @@ using EduSyncwebapi.Data;
 using EduSyncwebapi.Models;
 using EduSyncwebapi.Dtos;
 using EduSyncwebapi.Services;
+using Microsoft.Extensions.Logging;
 
 namespace EduSyncwebapi.Controllers
 {
@@ -16,14 +17,15 @@ namespace EduSyncwebapi.Controllers
     public class ResultModelsController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly EventHubService _eventHubService;
+        private readonly EventHubService? _eventHubService;
         private readonly ILogger<ResultModelsController> _logger;
 
-        public ResultModelsController(AppDbContext context, EventHubService eventHubService, ILogger<ResultModelsController> logger)
+        // EventHubService is optional for testability
+        public ResultModelsController(AppDbContext context, ILogger<ResultModelsController> logger, EventHubService? eventHubService = null)
         {
             _context = context;
-            _eventHubService = eventHubService;
             _logger = logger;
+            _eventHubService = eventHubService;
         }
 
         // GET: api/ResultModels
@@ -84,9 +86,13 @@ namespace EduSyncwebapi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                // Send event for result update
-                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
-                _logger.LogInformation($"Result updated and event sent for ResultId: {id}");
+
+                // Send event if EventHubService is available
+                if (_eventHubService != null)
+                {
+                    await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                    _logger.LogInformation($"Result updated and event sent for ResultId: {id}");
+                }
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -122,9 +128,13 @@ namespace EduSyncwebapi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                // Send event for new result submission
-                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
-                _logger.LogInformation($"New result created and event sent for ResultId: {result.ResultId}");
+
+                // Send event if EventHubService is available
+                if (_eventHubService != null)
+                {
+                    await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                    _logger.LogInformation($"New result created and event sent for ResultId: {result.ResultId}");
+                }
             }
             catch (DbUpdateException)
             {
@@ -154,19 +164,22 @@ namespace EduSyncwebapi.Controllers
             _context.ResultModels.Remove(result);
             await _context.SaveChangesAsync();
 
-            // Send event for result deletion
+            // Send event if EventHubService is available
             try
             {
-                var resultDto = new ResultDto
+                if (_eventHubService != null)
                 {
-                    ResultId = result.ResultId,
-                    AssessmentId = result.AssessmentId,
-                    UserId = result.UserId,
-                    Score = result.Score,
-                    AttemptDate = result.AttemptDate
-                };
-                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
-                _logger.LogInformation($"Result deleted and event sent for ResultId: {id}");
+                    var resultDto = new ResultDto
+                    {
+                        ResultId = result.ResultId,
+                        AssessmentId = result.AssessmentId,
+                        UserId = result.UserId,
+                        Score = result.Score,
+                        AttemptDate = result.AttemptDate
+                    };
+                    await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                    _logger.LogInformation($"Result deleted and event sent for ResultId: {id}");
+                }
             }
             catch (Exception ex)
             {

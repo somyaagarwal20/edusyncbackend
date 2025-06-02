@@ -11,6 +11,7 @@ using EduSyncwebapi.Data;
 using EduSyncwebapi.Models;
 using EduSyncwebapi.Dtos;
 using MockQueryable.Moq;
+using Microsoft.Extensions.Logging;
 
 namespace edusynctesting
 {
@@ -18,13 +19,15 @@ namespace edusynctesting
     public class ResultModelsControllerTests
     {
         private Mock<AppDbContext> _mockContext;
+        private Mock<ILogger<ResultModelsController>> _mockLogger;
         private ResultModelsController _controller;
 
         [SetUp]
         public void Setup()
         {
             _mockContext = new Mock<AppDbContext>();
-            _controller = new ResultModelsController(_mockContext.Object);
+            _mockLogger = new Mock<ILogger<ResultModelsController>>();
+            _controller = new ResultModelsController(_mockContext.Object, _mockLogger.Object);
         }
 
         [Test]
@@ -107,4 +110,4 @@ namespace edusynctesting
             Assert.That(result, Is.InstanceOf<NoContentResult>());
         }
     }
-}
+} 
