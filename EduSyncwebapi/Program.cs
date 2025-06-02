@@ -41,9 +41,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            //"http://localhost:3000",
-            // "https://edusync-frontend.azurestaticapps.net",
-            "https://witty-smoke-07babad00.6.azurestaticapps.net" // New frontend URL
+          
+            "https://witty-smoke-07babad00.6.azurestaticapps.net"  // Add your deployed frontend URL
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -52,6 +51,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddSingleton<EventHubService>();
 
 var app = builder.Build();
 

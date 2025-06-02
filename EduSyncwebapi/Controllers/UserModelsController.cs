@@ -137,8 +137,13 @@ namespace EduSyncwebapi.Controllers
 
         // POST: api/UserModels/login
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
+            if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new { message = "Email and password are required." });
+            }
+
             var user = await _context.UserModels
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 

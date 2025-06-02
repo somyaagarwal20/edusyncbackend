@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using EduSyncwebapi.Data;
 using EduSyncwebapi.Models;
 using EduSyncwebapi.Dtos;
+using EduSyncwebapi.Services;
 
 namespace EduSyncwebapi.Controllers
 {
@@ -15,10 +16,14 @@ namespace EduSyncwebapi.Controllers
     public class ResultModelsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly EventHubService _eventHubService;
+        private readonly ILogger<ResultModelsController> _logger;
 
-        public ResultModelsController(AppDbContext context)
+        public ResultModelsController(AppDbContext context, EventHubService eventHubService, ILogger<ResultModelsController> logger)
         {
             _context = context;
+            _eventHubService = eventHubService;
+            _logger = logger;
         }
 
         // GET: api/ResultModels
@@ -79,6 +84,9 @@ namespace EduSyncwebapi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                // Send event for result update
+                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                _logger.LogInformation($"Result updated and event sent for ResultId: {id}");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -86,6 +94,11 @@ namespace EduSyncwebapi.Controllers
                     return NotFound();
                 else
                     throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating result or sending event for ResultId: {id}");
+                throw;
             }
 
             return NoContent();
@@ -109,6 +122,9 @@ namespace EduSyncwebapi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                // Send event for new result submission
+                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                _logger.LogInformation($"New result created and event sent for ResultId: {result.ResultId}");
             }
             catch (DbUpdateException)
             {
@@ -116,6 +132,11 @@ namespace EduSyncwebapi.Controllers
                     return Conflict();
                 else
                     throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error creating result or sending event for ResultId: {result.ResultId}");
+                throw;
             }
 
             resultDto.ResultId = result.ResultId;
@@ -132,6 +153,26 @@ namespace EduSyncwebapi.Controllers
 
             _context.ResultModels.Remove(result);
             await _context.SaveChangesAsync();
+
+            // Send event for result deletion
+            try
+            {
+                var resultDto = new ResultDto
+                {
+                    ResultId = result.ResultId,
+                    AssessmentId = result.AssessmentId,
+                    UserId = result.UserId,
+                    Score = result.Score,
+                    AttemptDate = result.AttemptDate
+                };
+                await _eventHubService.SendAssessmentSubmissionEventAsync(resultDto);
+                _logger.LogInformation($"Result deleted and event sent for ResultId: {id}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending event for deleted ResultId: {id}");
+                // Don't throw here as the deletion was successful
+            }
 
             return NoContent();
         }
