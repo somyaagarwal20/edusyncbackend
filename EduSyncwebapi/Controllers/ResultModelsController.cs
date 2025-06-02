@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -94,17 +94,18 @@ namespace EduSyncwebapi.Controllers
                     _logger.LogInformation($"Result updated and event sent for ResultId: {id}");
                 }
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException dbEx)
             {
+                _logger.LogError(dbEx, $"Database concurrency error updating result for ResultId: {id}");
                 if (!ResultModelExists(id))
                     return NotFound();
                 else
-                    throw;
+                    return StatusCode(500, $"Database concurrency error: {dbEx.Message}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error updating result or sending event for ResultId: {id}");
-                throw;
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
 
             return NoContent();
@@ -136,17 +137,15 @@ namespace EduSyncwebapi.Controllers
                     _logger.LogInformation($"New result created and event sent for ResultId: {result.ResultId}");
                 }
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException dbEx)
             {
-                if (ResultModelExists(result.ResultId))
-                    return Conflict();
-                else
-                    throw;
+                _logger.LogError(dbEx, $"Database update error creating result for ResultId: {result.ResultId}");
+                return StatusCode(500, $"Database error: {dbEx.Message}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error creating result or sending event for ResultId: {result.ResultId}");
-                throw;
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
 
             resultDto.ResultId = result.ResultId;
