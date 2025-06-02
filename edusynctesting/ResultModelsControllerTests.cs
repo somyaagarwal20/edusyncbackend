@@ -11,7 +11,6 @@ using EduSyncwebapi.Data;
 using EduSyncwebapi.Models;
 using EduSyncwebapi.Dtos;
 using MockQueryable.Moq;
-using EduSyncwebapi.Services;
 using Microsoft.Extensions.Logging;
 
 namespace edusynctesting
@@ -20,7 +19,6 @@ namespace edusynctesting
     public class ResultModelsControllerTests
     {
         private Mock<AppDbContext> _mockContext;
-        private Mock<EventHubService> _mockEventHubService;
         private Mock<ILogger<ResultModelsController>> _mockLogger;
         private ResultModelsController _controller;
 
@@ -28,9 +26,8 @@ namespace edusynctesting
         public void Setup()
         {
             _mockContext = new Mock<AppDbContext>();
-            _mockEventHubService = new Mock<EventHubService>(null, null);
             _mockLogger = new Mock<ILogger<ResultModelsController>>();
-            _controller = new ResultModelsController(_mockContext.Object, _mockEventHubService.Object, _mockLogger.Object);
+            _controller = new ResultModelsController(_mockContext.Object, _mockLogger.Object);
         }
 
         [Test]
